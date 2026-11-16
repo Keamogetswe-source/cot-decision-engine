@@ -1,45 +1,41 @@
-# Small Business Sales Dashboard
+# Institutional Macro Flow & COT Decision Engine
 
-A data cleaning and analysis project on a fictional South African small-business dataset: 500 orders, 5 branches and 15 products (January to September 2026). I cleaned a deliberately messy dataset, answered three questions an owner would ask, and built a dashboard in Looker Studio.
+A weekly cross-asset decision engine in Python. It reads CFTC Commitments of Traders (Legacy Futures-Only) data and classifies how large institutions are positioned across currencies, commodities, equities and sovereign debt.
 
-> The data is fictional. Data-quality problems were deliberately introduced so I could practise finding and fixing them.
+> **Status:** Milestone 1 (planning and spec) in progress.
 
-## The business questions
+## The idea
 
-1. Which product sold the most?
-2. Which product made the most profit?
-3. Which products are slow movers?
+Most COT tools read one currency pair at a time. This one reads institutional futures flow the way an insurance underwriter prices systemic risk: where are large players paying up for protection against geopolitical shocks, inflation or slowdown?
 
-## Key findings
+- **Commodities as barometers:** Gold (`XAU`) and Crude Oil (`WTI`)
+- **Safe-haven vs. cyclical FX:** `JPY` and `CHF` against `USD` and `GBP`
+- **Equities vs. bonds:** `ES` against `ZN`, and whether capital shelters in Treasuries or in Gold
 
-- **Totals:** R163,968.80 in sales, R57,756.80 in profit, 500 orders.
-- **Best seller:** Rice 5kg is first on sales value (R21,776.40) and on profit (R5,728.40). It is also first on units (236) once two unusually large orders are excluded.
-- **Bulk orders change the story.** Two Individual-customer orders (`ORD0291`: 300 Laundry Soap, `ORD0390`: 200 Bath Soap) make those products lead on units. I kept them in the data, flagged them, and gave the dashboard a switch to include or exclude them.
-- **Branches:** Soweto is first on sales (R38,459) only because of the 300-unit Laundry Soap order. Without it, Pretoria is first. Tembisa is last either way.
-- **Slow movers:** Washing Powder sold the fewest units (105) and Toothpaste has the lowest sales value. Toilet Paper 18s is a strong seller that has not sold since 25 August 2026, which is worth asking the owner about. The dataset has no stock levels, so "dead stock" could not be measured directly.
+Because CFTC data lags (Tuesday positions, published Friday), each contract is scored with week-over-week flow, a 26-week COT Index and commercial hedger divergence, then run through four decision gates. Full rules are in [`docs/STRATEGY_SPEC.md`](docs/STRATEGY_SPEC.md).
 
-## Dashboard
+## Tracked contracts
 
-Looker Studio: _add the shared link here_
+`JPY` `CHF` `USD` `EUR` `GBP` `CAD` `AUD` `NZD` `XAU` `WTI` `ES` `ZN`, filtered strictly by CFTC Contract Market Code.
 
-_Add screenshots from the `screenshots/` folder here._
-
-## What I did
-
-1. **Inspected** the messy data before changing anything.
-2. **Cleaned** 12 kinds of problem in Google Sheets (duplicates, spelling, blanks, negative quantities, impossible dates, text stored as numbers, wrong profit). Each fix was checked with a formula afterwards. Full details: [docs/data_cleaning_log.md](docs/data_cleaning_log.md).
-3. **Analysed** the clean data with pivot tables.
-4. **Visualised** the results in Looker Studio.
-
-## Repository structure
+## Planned structure
 
 ```
-data/raw/sales_data_messy.csv      messy input (508 rows)
-data/clean/sales_data_clean.csv    cleaned output (500 rows)
-docs/data_cleaning_log.md          what was wrong, how I found it, how I fixed it
-screenshots/                       dashboard images
+docs/      STRATEGY_SPEC.md, DECISIONS.md, MASTER_PROMPT.md
+src/       contracts, fetcher, validator, engine, storage, reporter, cli
+tests/     test_engine, test_validator, test_storage
+reports/   latest_matrix.md (auto-generated weekly)
 ```
 
-## Tools
+## Roadmap
 
-Google Sheets (cleaning, pivot tables), Looker Studio (dashboard), Git and GitHub.
+| Milestone | Scope | Days |
+|---|---|---|
+| 1. Planning & spec | README, strategy spec, decision log, GitHub Issues | 1–2 |
+| 2. Data pipeline & validation | Socrata fetcher, zip fallback, caching, integrity checks | 3–5 |
+| 3. Engine, SQLite ledger & reporting | Gates, macro regime, idempotent upserts, Markdown/CSV reports | 6–9 |
+| 4. Testing, CI/CD & polish | Full pytest coverage, Saturday GitHub Actions run, architecture diagram | 10 |
+
+## Disclaimer
+
+Educational and research project. Not financial advice.
