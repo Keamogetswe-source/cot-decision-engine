@@ -9,8 +9,9 @@ Choices that shape the engine, with the reason and the current status. A rule ch
 | D-003 | A zero-range window gives NEUTRAL plus a data-quality warning | Accepted |
 | D-004 | Overlay "Bullish" and "Bearish" include unwind and trend labels; Growth / Reflation needs both AUD and CAD | Accepted |
 | D-005 | `engine.py` is built at the start of Milestone 3 | Accepted |
-| D-006 | Python with `requests`, `pandas` and `pytest`; flat modules in `src/` | Proposed |
+| D-006 | Python with `requests`, `pandas` and `pytest`; flat modules in `src/` | Accepted |
 | D-007 | How the SQLite ledger persists between GitHub Actions runs | Open |
+| D-008 | The fetcher pulls 40 weeks of history by default | Accepted |
 
 ---
 
@@ -58,13 +59,13 @@ Choices that shape the engine, with the reason and the current status. A rule ch
 
 **Consequences:** The README roadmap reflects this.
 
-## D-006: Tooling (proposed)
+## D-006: Tooling
 
 **Context:** The master prompt asks for Python, `pytest` and a Socrata fetcher but names no libraries.
 
-**Proposal:** `requests` for the API, `pandas` for the rolling windows, `pytest` for tests. Modules live directly in `src/` and are imported as `src.<module>`. Tests are written alongside each module.
+**Decision:** `requests` for the API, `pandas` for the rolling windows, `pytest` for tests. Modules live directly in `src/` and are imported as `src.<module>`. Tests are written alongside each module.
 
-**Status:** Proposed. Confirm or change before Milestone 2.
+**Status:** Accepted at the start of Milestone 2.
 
 ## D-007: Ledger persistence on GitHub Actions (open)
 
@@ -75,3 +76,11 @@ Choices that shape the engine, with the reason and the current status. A rule ch
 2. Rebuild the ledger from cached CFTC data on every run.
 
 **Status:** Open. Decide during Milestone 3.
+
+## D-008: Fetch window
+
+**Context:** A full signal needs at least 27 weeks of history (D-001). Holiday delays or missing weeks can leave gaps.
+
+**Decision:** The fetcher pulls 40 weeks of history by default, a buffer of 13 weeks. The window is a function parameter, not a strategy rule.
+
+**Consequences:** The validator (Milestone 2) reports contracts that still have fewer than 27 usable weeks.
