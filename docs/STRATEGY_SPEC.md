@@ -1,6 +1,6 @@
 # Strategy Specification
 
-**Status:** Draft v0.1 (Milestone 1). Rules below are transcribed from `MASTER_PROMPT.md`. Open questions are listed at the bottom and get resolved in `DECISIONS.md` before engine logic is locked.
+**Status:** Draft v0.2 (Milestone 1). Rules are transcribed from `MASTER_PROMPT.md`. The open questions from v0.1 are resolved in `DECISIONS.md` and reflected below.
 
 ## 1. Purpose
 
@@ -53,7 +53,9 @@ Spec_COT_Index = (Current_Spec_Net - 26Wk_Low) / (26Wk_High - 26Wk_Low) * 100
 Comm_COT_Index = (Current_Comm_Net - 26Wk_Low) / (26Wk_High - 26Wk_Low) * 100
 ```
 
-Each index uses the 26-week low and high of its own net series (speculator or commercial).
+- Each index uses the 26-week low and high of its own net series (speculator or commercial).
+- The window is the current week plus the 25 weeks before it. The prior-week index has its own window ending the week before (D-001). A full signal needs at least 27 weeks of history.
+- If the 26-week high equals the low, the index is undefined. The contract is labelled NEUTRAL with a data-quality warning (D-003).
 
 ## 5. The Four Gates
 
@@ -69,19 +71,23 @@ Gates are evaluated in order, 1 to 4, and every contract gets exactly one label.
 | 3 | **BEARISH TREND** | `20 <= Spec_COT_Index <= 80`, `WoW_Flow < 0` and `Spec_Net < 0` | Active trend |
 | 4 | **NEUTRAL** | All other states | No play |
 
+The label follows the index, not the sign of `Spec_Net`. When the two disagree (for example `EXTREME SHORT` while `Spec_Net` is positive), the report adds a sign-mismatch note (D-002).
+
 ## 6. Macro Regime Readout
 
-Generated after all contracts are scored.
+Generated after all contracts are scored. "Bullish" means BULLISH UNWIND or BULLISH TREND, "Bearish" means BEARISH UNWIND or BEARISH TREND, and "Exhausted Long" means EXTREME LONG (D-004).
 
 - **Risk-Off / Insurance Bid:** `XAU` is Bullish, and at least one of `JPY`, `CHF` or `ZN` (bond buying) is Bullish, while `ES` is Bearish or Exhausted Long.
-- **Growth / Reflation Bid:** `WTI` and `ES` are Bullish alongside cyclical FX (`AUD`, `CAD`), while `JPY` and `CHF` are Bearish.
-- **FX Cross Matrix:** Pair Active BULLISH currencies against Active BEARISH currencies only. Commodities and bonds are never paired into synthetic FX crosses.
+- **Growth / Reflation Bid:** `WTI` and `ES` are Bullish alongside cyclical FX (both `AUD` and `CAD` Bullish), while `JPY` and `CHF` are Bearish.
+- **FX Cross Matrix:** Pair Bullish currencies against Bearish currencies only. Commodities and bonds are never paired into synthetic FX crosses.
 
-## 7. Open Questions
+## 7. Resolved Questions
 
-To be answered by the lead architect and recorded in `DECISIONS.md`.
+| Question | Resolution | Decision |
+|---|---|---|
+| Does the 26-week window include the current week? | Yes; the prior-week index has its own window | D-001 |
+| Label versus sign of `Spec_Net` | Label follows the index; mismatch gets a note | D-002 |
+| Zero-range window | NEUTRAL with a data-quality warning | D-003 |
+| Meaning of Bullish and Bearish in the overlay; AUD and CAD | Unwind and trend both count; both AUD and CAD required | D-004 |
 
-1. **26-week window:** Does it include the current week? Does the prior-week index (Gate 1) use its own trailing 26 weeks?
-2. **Index vs. sign:** The indices are relative to the 26-week range, so `EXTREME SHORT` can fire while `Spec_Net` is still positive (and `EXTREME LONG` while it is still negative). Should the label ignore the sign, or should the report note the mismatch?
-3. **Zero-range window:** If the 26-week high equals the low, the index is undefined. What label should the contract get (for example NEUTRAL with a data-quality note)?
-4. **Overlay wording:** Does "Bullish" or "Bearish" in the overlay include both unwind and trend labels (Gates 1 and 3)? In Growth / Reflation, must both `AUD` and `CAD` be Bullish, or at least one?
+Still open: how the SQLite ledger persists on GitHub Actions (D-007). That is an engineering choice, not a strategy rule.
